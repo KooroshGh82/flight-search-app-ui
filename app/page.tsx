@@ -1,65 +1,159 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+
+type TourResult = {
+  rank: number;
+  origin: string;
+  destination: string;
+  price: number;
+  airline: string;
+  description: string;
+  source: string;
+  url: string;
+};
 
 export default function Home() {
+  const [data, setData] = useState<TourResult[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [clicked, setClicked] = useState(false);
+
+  const [query, setQuery] = useState("");
+  const [origin, setOrigin] = useState("");
+  const [destination, setDestination] = useState("");
+  const [airline, setAirline] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+
+  const search = async () => {
+    setClicked(true);
+    const params = new URLSearchParams();
+
+    if (query) params.append("query", query);
+    if (origin) params.append("origin", origin);
+    if (destination) params.append("destination", destination);
+    if (airline) params.append("airline", airline);
+    if (maxPrice) params.append("max_price", maxPrice);
+
+    const res = await fetch(
+      `http://127.0.0.1:8000/search?${params.toString()}`
+    );
+
+    const json = await res.json();
+    setData(json);
+    setSelected([]);
+  };
+
+  const toggleSelect = (rank: number) => {
+    setSelected((prev) =>
+      prev.includes(rank) ? prev.filter((r) => r !== rank) : [...prev, rank]
+    );
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div dir="rtl" className="min-h-screen p-6 font-sans text-right">
+      <h1 className="text-2xl font-bold mb-6 text-orange-400">
+        سامانه جستجوی معنایی تورهای پروازی داخلی
+      </h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-6">
+        <input
+          className="input"
+          placeholder="جستجوی معنایی (مثلاً مشهد)"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <input
+          className="input"
+          placeholder="مبدا"
+          value={origin}
+          onChange={(e) => setOrigin(e.target.value)}
+        />
+        <input
+          className="input"
+          placeholder="مقصد"
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+        />
+        <input
+          className="input"
+          placeholder="ایرلاین"
+          value={airline}
+          onChange={(e) => setAirline(e.target.value)}
+        />
+        <input
+          className="input"
+          type="number"
+          placeholder="حداکثر قیمت (تومان)"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+        />
+        <button
+          onClick={search}
+          className="bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+        >
+          جستجو
+        </button>
+      </div>
+
+      {clicked &&
+        (data.length > 0 ? (
+          <div className="overflow-x-auto bg-white rounded-xl shadow">
+            <table className="w-full text-sm text-right">
+              <thead className="bg-gray-800 text-white">
+                <tr>
+                  <th className="p-3 text-center">انتخاب</th>
+                  <th className="p-3">رتبه</th>
+                  <th className="p-3">مسیر</th>
+                  <th className="p-3">قیمت (تومان)</th>
+                  <th className="p-3">ایرلاین</th>
+                  <th className="p-3">بخشی از متن منبع</th>
+                  <th className="p-3">منبع</th>
+                  <th className="p-3">لینک</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((item) => (
+                  <tr
+                    key={item.rank}
+                    className={`border-b hover:bg-gray-50 ${
+                      item.rank === 1 ? "bg-blue-50" : ""
+                    }`}
+                  >
+                    <td className="p-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(item.rank)}
+                        onChange={() => toggleSelect(item.rank)}
+                      />
+                    </td>
+                    <td className="p-3 font-bold text-gray-700">{item.rank}</td>
+                    <td className="p-3 text-gray-700">
+                      {item.origin} به {item.destination}
+                    </td>
+                    <td className="p-3 text-gray-700">
+                      {Number(item.price).toLocaleString()}
+                    </td>
+                    <td className="p-3 text-gray-700">{item.airline}</td>
+                    <td className="p-3 text-gray-700">{item.description}</td>
+                    <td className="p-3 text-gray-700">{item.source}</td>
+                    <td className="p-3 text-blue-600 underline">
+                      <a href={item.url} target="_blank" rel="noreferrer">
+                        مشاهده
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="p-4 text-sm text-gray-600">
+              تعداد آیتم‌های انتخاب‌شده: {selected.length}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p>نتیجه ای یافت نشد</p>
+          </div>
+        ))}
     </div>
   );
 }
